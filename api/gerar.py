@@ -1,69 +1,30 @@
 # api/gerar.py
+# -*- coding: utf-8 -*-
 import json
 import re
-import openpyxl
 from http.server import BaseHTTPRequestHandler
 from pathlib import Path
+import openpyxl
 
-# Planilha esperada em: dados/GABARITO.xlsx
+# Caminho da planilha no projeto Vercel:
 PLANILHA = Path(__file__).parent.parent / "dados" / "GABARITO.xlsx"
 
-MAX_WILDCARDS = 5         # limite de asteriscos permitidos
-MAX_COMBINACOES = 20000   # limite de combinações geradas
-
-def carregar_gabarito():
-    if not PLANILHA.exists():
-        raise FileNotFoundError(f"Planilha não encontrada: {PLANILHA}")
-    wb = openpyxl.load_workbook(PLANILHA)
-    ws = wb.active
-    dados = []
-    # Colunas: B=MÊS, C=ANO, F=CÓDIGO (linhas a partir da 2)
-    for row in ws.iter_rows(min_row=2, values_only=True):
-        mes = (str(row[1]).zfill(2) if row[1] is not None else "")
-        ano = (str(row[2]) if row[2] is not None else "")
-        codigo = (str(row[5]) if row[5] is not None else "")
-        if mes and ano and codigo:
-            dados.append({"mes": mes, "ano": ano, "codigo": codigo})
-    return dados
-
-def buscar_codigos_por_mes_ano(mes, ano):
-    dados = carregar_gabarito()
-    return [d["codigo"] for d in dados if d["mes"] == mes and d["ano"] == ano]
-
-def validar_formato(caf: str):
-    if not caf:
-        return False, "Informe um CAF."
-    if not re.fullmatch(r"[A-Z0-9.*]+", caf):
-        return False, "Use apenas A–Z, 0–9, ponto (.) e asterisco (*)."
-    if len(caf) < 8:
-        return False, "CAF muito curto."
-    return True, ""
-
-def gerar_combinacoes(mask: str, codigos_validos):
-    wc = mask.count("*")
-    total = 10 ** wc
-    if wc > MAX_WILDCARDS:
-        raise ValueError(f"Excesso de curingas ({wc}). Máximo: {MAX_WILDCARDS}")
-    if total > MAX_COMBINACOES:
-        raise ValueError(f"Muitas combinações ({total:,}). Máximo: {MAX_COMBINACOES:,}")
-
-    combos = []
-    for i in range(total):
-        digits = str(i).zfill(wc)
-        p = 0
-        out = []
-        for ch in mask:
-            if ch == "*":
-                out.append(digits[p]); p += 1
-            else:
-                out.append(ch)
-        code = "".join(out)
-        # aceita se contiver qualquer código válido da planilha
-        for cod_val in codigos_validos:
-            if cod_val in code:
-                combos.append(code)
-                break
-    return combos
+# Ex.: BA032025.01.00**39367CAF  (ou ...00XX..., ou ...00dd...)
+CAF_RE = re.compile(
+    r"""^\s*
+        (?P<UF>[A-Z]{2})
+        (?P<MES>\d{2})
+        (?P<ANO>\d{4})
+        \.
+        (?P<COD1>\d{2})
+        \.
+        (?P<COD2>\d{2})
+        (?P<IDENT>(\*\*|XX|\d{2}))
+        (?P<TAIL>\d{5})
+        CAF
+        \s*$""",
+    re.VERBOSE | re.IGNORECASE
+)
 
 def _send_json(handler: BaseHTTPRequestHandler, status: int, payload: dict):
     body = json.dumps(payload, ensure_ascii=False).encode("utf-8")
@@ -76,6 +37,73 @@ def _send_json(handler: BaseHTTPRequestHandler, status: int, payload: dict):
     handler.send_header("Content-Length", str(len(body)))
     handler.end_headers()
     handler.wfile.write(body)
+
+def parse_caf(caf: str):
+    if not caf:
+        return None
+    caf_n = caf.strip().upper().replace(" ", "")
+    m = CAF_RE.match(caf_n)
+    if not m:
+        return None
+    d = m.groupdict()
+    d["CAF_NORMALIZADO"] = caf_n
+    return d
+
+def ler_identificadores_unicos_ordenados(mes: str, ano: str):
+    """Lê coluna F (índice 5) para o mês/ano e retorna lista de strings '00'..'99' únicas e ordenadas."""
+    if not PLANILHA.exists():
+        raise FileNotFoundError(f"Planilha não encontrada: {PLANILHA}")
+
+    wb = openpyxl.load_workbook(PLANILHA, data_only=True)
+    ws = wb.active
+
+    vistos = set()
+    ids = []
+
+    # Colunas esperadas: B (2) = mês, C (3) = ano, F (6) = identificador
+    for row in ws.iter_rows(min_row=2, values_only=True):
+        mes_val = row[1]
+        ano_val = row[2]
+        ident_val = row[5] if len(row) >= 6 else None
+
+        try:
+            mes_ok = f"{int(mes_val):02d}" if mes_val is not None else None
+        except Exception:
+            mes_ok = None
+        try:
+            ano_ok = str(int(ano_val)) if ano_val is not None else None
+        except Exception:
+            ano_ok = None
+
+        if mes_ok == mes and ano_ok == ano:
+            # identificador deve ser número 0..99
+            try:
+                n = int(str(ident_val).strip())
+            except Exception:
+                continue
+            if 0 <= n <= 99:
+                cod = f"{n:02d}"
+                if cod not in vistos:
+                    vistos.add(cod)
+                    ids.append(cod)
+
+    ids.sort(key=lambda x: int(x))
+    return ids
+
+def gerar_combos(parsed: dict, ids_lista):
+    """Monta prefixo e substitui IDENT pelos ids da planilha.
+       Se IDENT já for 'dd', valida e retorna apenas 1 código (se existir no conjunto)."""
+    prefixo = f"{parsed['UF']}{parsed['MES']}{parsed['ANO']}.{parsed['COD1']}.{parsed['COD2']}"
+    tail = f"{parsed['TAIL']}CAF"
+
+    ident = parsed["IDENT"]
+    # Caso IDENT já seja dois dígitos:
+    if re.fullmatch(r"\d{2}", ident):
+        # Se o dígito existe na lista permitida, retorna 1 único; senão, lista vazia
+        return [f"{prefixo}{ident}{tail}"] if ident in ids_lista else []
+
+    # Caso IDENT seja ** ou XX -> gera para todos os ids válidos
+    return [f"{prefixo}{cod}{tail}" for cod in ids_lista]
 
 class handler(BaseHTTPRequestHandler):
     def do_OPTIONS(self):
@@ -90,22 +118,23 @@ class handler(BaseHTTPRequestHandler):
             length = int(self.headers.get("Content-Length", 0))
             raw = self.rfile.read(length) if length else b"{}"
             data = json.loads(raw.decode("utf-8") or "{}")
-            caf = (data.get("caf") or "").strip().upper()
+            caf_in = (data.get("caf") or "").strip()
 
-            ok, msg = validar_formato(caf)
-            if not ok:
-                return _send_json(self, 400, {"erro": msg})
+            parsed = parse_caf(caf_in)
+            if not parsed:
+                return _send_json(self, 400, {"erro": "Formato inválido. Ex.: BA032025.01.00**39367CAF"})
 
-            mes = caf[2:4]
-            ano = caf[4:8]
-            if not (mes.isdigit() and ano.isdigit()):
-                return _send_json(self, 400, {"erro": "Não foi possível extrair MÊS/ANO do CAF."})
+            mes = parsed["MES"]
+            ano = parsed["ANO"]
 
-            codigos_validos = buscar_codigos_por_mes_ano(mes, ano)
-            if not codigos_validos:
-                return _send_json(self, 404, {"erro": f"Nenhum código encontrado para {mes}/{ano}."})
+            ids = ler_identificadores_unicos_ordenados(mes, ano)
+            if not ids:
+                return _send_json(self, 404, {"erro": f"Nenhum identificador encontrado para {mes}/{ano}."})
 
-            combos = gerar_combinacoes(caf, codigos_validos)
+            combos = gerar_combos(parsed, ids)
+            if not combos:
+                return _send_json(self, 404, {"erro": "IDENT já numérico e não presente no gabarito para este mês/ano."})
+
             return _send_json(self, 200, {"combos": combos})
 
         except FileNotFoundError as e:
