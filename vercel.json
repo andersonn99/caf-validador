@@ -1,7 +1,9 @@
 {
   "version": 2,
   "functions": {
-    "api/**/*.py": { "runtime": "python3.11" }
+    "api/**/*.py": {
+      "runtime": "vercel-python@3.9"
+    }
   },
   "routes": [
     { "src": "/", "dest": "/index.html" },
@@ -9,3 +11,4 @@
     { "src": "/api/ping", "dest": "/api/ping.py" }
   ]
 }
+
