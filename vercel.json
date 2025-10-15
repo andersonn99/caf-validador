@@ -11,4 +11,3 @@
     { "src": "/api/ping", "dest": "/api/ping.py" }
   ]
 }
-
