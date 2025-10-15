@@ -5,65 +5,40 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Validador de CAF</title>
   <style>
-    :root{
-      --green:#2e7d32;
-      --green-700:#1b5e20;
-      --muted:#f5f5f5;
-      --ink:#111;
-      --panel:#fff;
-    }
-    *{box-sizing:border-box}
-    body{font-family: Arial, Helvetica, sans-serif; color:var(--ink); margin:0; background:#fff}
-    .wrap{max-width:980px; margin:auto; padding:40px 20px}
+    :root{ --green:#2e7d32; --green-700:#1b5e20; --muted:#f5f5f5; --ink:#111; --panel:#fff; }
+    *{ box-sizing:border-box }
+    body{ font-family: Arial, Helvetica, sans-serif; color:var(--ink); margin:0; background:#fff }
+    .wrap{ max-width:980px; margin:auto; padding:40px 20px }
     h1{ color:var(--green); font-size:32px; margin:0 0 8px }
     .lead{ margin:0 0 18px; line-height:1.5 }
-    code{ background:#eef7ee; padding:2px 6px; border-radius:6px; }
+    code{ background:#eef7ee; padding:2px 6px; border-radius:6px }
 
-    .toolbar{display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin:16px 0 24px}
-    .link-btn{
-      display:inline-flex; align-items:center; gap:8px; text-decoration:none;
-      border:1px solid var(--green); color:var(--green); background:transparent;
-      border-radius:999px; padding:8px 14px; font-weight:600;
-    }
+    .toolbar{ display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin:16px 0 24px }
+    .link-btn{ display:inline-flex; align-items:center; gap:8px; text-decoration:none; border:1px solid var(--green); color:var(--green); background:transparent; border-radius:999px; padding:8px 14px; font-weight:600 }
     .link-btn:hover{ background:var(--green); color:#fff }
     .link-btn svg{ width:18px; height:18px }
 
     .panel{ background:var(--panel); border:1px solid #e7e7e7; border-radius:14px; padding:16px; box-shadow:0 1px 2px rgba(0,0,0,.04) }
     .row{ display:flex; gap:10px; align-items:center; flex-wrap:wrap }
-    input[type="text"]{
-      flex:1 1 420px; min-width:260px; padding:12px 16px; font-size:16px;
-      border:2px solid var(--green); border-radius:999px; outline:none;
-    }
+    input[type="text"]{ flex:1 1 420px; min-width:260px; padding:12px 16px; font-size:16px; border:2px solid var(--green); border-radius:999px; outline:none }
     input[type="text"]:focus{ border-color:var(--green-700) }
-    button.primary{
-      padding:12px 18px; background:var(--green); color:#fff;
-      border:none; border-radius:999px; cursor:pointer; font-weight:700
-    }
+    button.primary{ padding:12px 18px; background:var(--green); color:#fff; border:none; border-radius:999px; cursor:pointer; font-weight:700 }
     button.primary:disabled{ opacity:.6; cursor:not-allowed }
     .hint{ font-size:13px; color:#555; margin-top:8px }
 
-    .stats{ display:flex; gap:12px; align-items:center; margin:14px 0 0; font-size:14px; }
-    .badge{
-      display:inline-block; background:#eef7ee; color:var(--green);
-      border:1px solid var(--green); border-radius:999px; padding:4px 10px; font-weight:600
-    }
+    .stats{ display:flex; gap:12px; align-items:center; margin:14px 0 0; font-size:14px }
+    .badge{ display:inline-block; background:#eef7ee; color:var(--green); border:1px solid var(--green); border-radius:999px; padding:4px 10px; font-weight:600 }
     .danger{ color:#b00020 }
     .ok{ color:var(--green) }
 
-    .result{ margin-top:20px; }
+    .result{ margin-top:20px }
     .grid{ display:grid; grid-template-columns:1fr; gap:8px }
     @media (min-width:740px){ .grid{ grid-template-columns:1fr 1fr } }
 
-    .item{
-      display:flex; justify-content:space-between; align-items:center;
-      background:var(--muted); padding:10px 12px; border-radius:10px; gap:10px;
-    }
+    .item{ display:flex; justify-content:space-between; align-items:center; background:var(--muted); padding:10px 12px; border-radius:10px; gap:10px }
     .code{ font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace; font-size:15px }
     .actions{ display:flex; gap:8px; flex-wrap:wrap }
-    .ghost{
-      background:transparent; color:var(--green); border:1px solid var(--green);
-      border-radius:999px; padding:6px 12px; cursor:pointer; font-weight:600
-    }
+    .ghost{ background:transparent; color:var(--green); border:1px solid var(--green); border-radius:999px; padding:6px 12px; cursor:pointer; font-weight:600 }
     .ghost:hover{ background:var(--green); color:#fff }
 
     .footer-note{ font-size:12px; color:#666; margin-top:18px }
@@ -78,7 +53,6 @@
     </p>
 
     <div class="toolbar">
-      <!-- Troque a URL do vídeo abaixo -->
       <a class="link-btn" href="https://www.youtube.com/watch?v=XXXXXXXXXXX" target="_blank" rel="noopener">
         <svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
         Vídeo de Instruções
@@ -96,7 +70,7 @@
       </div>
       <div class="hint">
         • Use letras maiúsculas, números, pontos e asteriscos. Recomenda-se terminar com <code>CAF</code>.<br/>
-        • O backend valida limites de combinações e filtra por mês/ano conforme a planilha.
+        • O backend valida limites e cruza mês/ano com a planilha <code>GABARITO.xlsx</code>.
       </div>
       <div class="stats" id="stats"></div>
     </div>
@@ -117,41 +91,26 @@
     function toast(msg){
       const t = document.createElement('div');
       t.textContent = msg;
-      Object.assign(t.style,{
-        position:'fixed', right:'16px', bottom:'16px', background:'#333', color:'#fff',
-        padding:'8px 12px', borderRadius:'10px', fontSize:'13px', opacity:'0',
-        transition:'opacity .2s ease', zIndex:9999
-      });
+      Object.assign(t.style,{ position:'fixed', right:'16px', bottom:'16px', background:'#333', color:'#fff',
+        padding:'8px 12px', borderRadius:'10px', fontSize:'13px', opacity:'0', transition:'opacity .2s ease', zIndex:9999 });
       document.body.appendChild(t);
       requestAnimationFrame(()=>{ t.style.opacity='1'; });
       setTimeout(()=>{ t.style.opacity='0'; setTimeout(()=>t.remove(),200); },1200);
     }
 
     function linhaCAF(code){
-      const div = document.createElement('div');
-      div.className = 'item';
-
-      const left = document.createElement('div');
-      left.className = 'code';
-      left.textContent = code;
-
-      const actions = document.createElement('div');
-      actions.className = 'actions';
+      const div = document.createElement('div'); div.className = 'item';
+      const left = document.createElement('div'); left.className = 'code'; left.textContent = code;
+      const actions = document.createElement('div'); actions.className = 'actions';
 
       const btnCopy = document.createElement('button');
-      btnCopy.className = 'ghost';
-      btnCopy.textContent = 'Copiar';
+      btnCopy.className = 'ghost'; btnCopy.textContent = 'Copiar';
       btnCopy.addEventListener('click', async () => {
-        try{
-          await navigator.clipboard.writeText(code);
-          toast('Copiado!');
-        }catch(e){ alert('Não foi possível copiar.'); }
+        try{ await navigator.clipboard.writeText(code); toast('Copiado!'); }catch(e){ alert('Não foi possível copiar.'); }
       });
 
       const btnLupa = document.createElement('button');
-      btnLupa.className = 'ghost';
-      btnLupa.innerHTML = '🔍';
-      btnLupa.title = 'Abrir consulta do CAF';
+      btnLupa.className = 'ghost'; btnLupa.innerHTML = '🔍'; btnLupa.title = 'Abrir consulta do CAF';
       btnLupa.addEventListener('click', async () => {
         try{ await navigator.clipboard.writeText(code);}catch(_){}
         const url = 'https://caf.mda.gov.br/consulta-publica/ufpa?caf=' + encodeURIComponent(code);
@@ -183,11 +142,8 @@
 
         stats.innerHTML = `<span class="badge ok">OK</span> <span>Geradas <b>${data.combos.length.toLocaleString()}</b> combinações.</span>`;
 
-        const grid = document.createElement('div');
-        grid.className = 'grid';
-        for(const code of data.combos){
-          grid.appendChild(linhaCAF(code));
-        }
+        const grid = document.createElement('div'); grid.className = 'grid';
+        for(const code of data.combos){ grid.appendChild(linhaCAF(code)); }
         out.appendChild(grid);
 
       }catch(err){
