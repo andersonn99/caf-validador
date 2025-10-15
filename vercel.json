@@ -6,11 +6,6 @@
     }
   },
   "routes": [
-    {
-      "src": "/api/gerar",
-      "dest": "/api/gerar.py"
-    }
+    { "src": "/api/gerar", "dest": "/api/gerar.py" }
   ]
 }
-
-
