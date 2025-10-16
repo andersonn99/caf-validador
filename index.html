@@ -129,7 +129,14 @@
 
     <div class="panel">
       <div class="row">
-        <input id="inputCAF" type="text" placeholder="Ex.: BA032025.01.00**39367CAF" />
+        <input 
+          id="inputCAF"
+          type="text"
+          placeholder="Ex.: BA032025.01.00**39367CAF"
+          pattern="^BA\d{6}\.\d{2}\.\d{2}(\*\*|\d{2})\d{5}CAF$"
+          title="Formato válido: BA032025.01.00**39367CAF"
+        />
+
         <button id="btnGerar" class="primary">GERAR CAF</button>
       </div>
       <div class="hint">
@@ -184,6 +191,26 @@
         out.appendChild(grid);
       }catch(err){ stats.innerHTML = `<span class="badge danger">Erro</span> <span>${err.message}</span>`; }
     }
+    const input = document.getElementById('inputCAF');
+    const btn = document.getElementById('btnGerar');
+    
+    btn.addEventListener('click', (e) => {
+      const regex = /^BA\d{6}\.\d{2}\.\d{2}(\*\*|\d{2})\d{5}CAF$/;
+      const value = input.value.trim().toUpperCase();
+      if (!regex.test(value)) {
+        e.preventDefault();
+        input.setCustomValidity('Por favor, use o formato correto: BA032025.01.00**39367CAF');
+        input.reportValidity();
+        return;
+      }
+      input.setCustomValidity('');
+      gerar(); // chama sua função que gera as combinações
+    });
+    
+    input.addEventListener('input', () => {
+      input.setCustomValidity('');
+    });
+
 
     btn.addEventListener('click', gerar);
     input.addEventListener('keydown', e => { if(e.key==='Enter') gerar(); });
