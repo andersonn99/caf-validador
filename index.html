@@ -64,10 +64,50 @@
     padding:6px 12px; cursor:pointer; font-weight:600;
     min-width:84px; display:inline-flex; align-items:center; justify-content:center;
   }
+    
   .ghost:hover{ background:var(--green); color:#fff }
+  /* espaço extra no final da página */
+.wrap{ padding-bottom: 90px; }
+
+/* Botão flutuante do WhatsApp */
+.whatsapp-fab{
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+  z-index: 10000;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: #25D366;
+  color: #fff;
+  text-decoration: none;
+  border-radius: 999px;
+  padding: 10px 14px;
+  font-weight: 700;
+  box-shadow: 0 6px 16px rgba(0,0,0,.18);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.whatsapp-fab:hover{
+  filter: brightness(.95);
+  transform: scale(1.05);
+  box-shadow: 0 8px 20px rgba(0,0,0,.25);
+}
+.whatsapp-fab svg{ width: 18px; height: 18px; }
+
 </style>
 
 </head>
+<a
+  class="whatsapp-fab"
+  href="https://wa.me/5575999778739?text=Ol%C3%A1%2C%20solicito%20orienta%C3%A7%C3%A3o%20sobre%20o%20Site%20Validador%20da%20CAF"
+  target="_blank" rel="noopener" aria-label="Suporte no WhatsApp"
+  title="Suporte no WhatsApp">
+  <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+    <path d="M20.5 3.5A11 11 0 0 0 3.1 17.3L2 22l4.8-1.2A11 11 0 1 0 20.5 3.5Zm-8.6 16a9 9 0 0 1-4.6-1.3l-.3-.2-2.7.7.7-2.6-.2-.3a9 9 0 1 1 7.1 3.7Zm5-6.8c-.3-.2-1.7-.8-1.9-.9s-.4-.1-.6.1-.7.9-.9 1.1-.3.2-.6.1a7.3 7.3 0 0 1-3.3-2 7.1 7.1 0 0 1-1.4-2.5c-.1-.3 0-.4.1-.6l.5-.6c.1-.2.2-.4.3-.6a.6.6 0 0 0 0-.6c0-.2-.6-1.5-.8-2S7.8 4 7.5 4H7a1.2 1.2 0 0 0-.9.4 3.9 3.9 0 0 0-1.2 3c0 1.7 1.2 3.3 1.3 3.6a11.6 11.6 0 0 0 4.4 4.2c.5.2 2 .8 2.7 1s1.7.1 2.3-.1a3.3 3.3 0 0 0 2.2-1.6c.2-.4.2-1 .2-1s-.2-.2-.4-.3Z"/>
+  </svg>
+  Suporte no WhatsApp
+</a>
+
 <body>
   <div class="wrap">
     <h1>VALIDADOR DE CAF</h1>
