@@ -40,6 +40,7 @@
       padding:12px 18px; background:var(--green); color:#fff;
       border:none; border-radius:999px; cursor:pointer; font-weight:700
     }
+    button.primary:disabled{ opacity:.6; cursor:not-allowed }
     .hint{ font-size:13px; color:#555; margin-top:8px }
 
     .stats{ display:flex; gap:12px; align-items:center; margin:14px 0 0; font-size:14px; }
@@ -224,9 +225,22 @@
       return div;
     }
 
+    // ——— RESTRIÇÃO DE DIGITAÇÃO ———
+    input.addEventListener('input', () => {
+      const max = parseInt(input.getAttribute('maxlength'), 10) || 24;
+      let v = (input.value || '').toUpperCase().replace(/[^A-Z0-9.*]/g, '');
+      if (v.length > max) v = v.slice(0, max);
+      input.value = v;
+      input.setCustomValidity('');
+    });
+
+    // Regex: BAMMAAAA.XX.XXXXXXXXXCAF
+    const CAF_REGEX = /^BA\d{6}\.\d{2}\.[0-9*]{9}CAF$/;
+
     async function gerar(){
       out.innerHTML = '';
       stats.textContent = 'Processando...';
+      btn.disabled = true;
 
       const caf = (input.value || '').trim().toUpperCase();
       try{
@@ -242,32 +256,25 @@
           return;
         }
 
-        stats.innerHTML = `<span class="badge ok">OK</span> <span>Geradas <b>${data.combos.length.toLocaleString()}</b> combinações.</span>`;
+        // DEDUPLICA resultados preservando a ordem
+        const unicos = Array.from(new Set(Array.isArray(data.combos) ? data.combos : []));
+        stats.innerHTML = `<span class="badge ok">OK</span> <span>Geradas <b>${unicos.length.toLocaleString()}</b> combinações.</span>`;
 
         const grid = document.createElement('div');
         grid.className = 'grid';
-        for(const code of data.combos){
+        for(const code of unicos){
           grid.appendChild(linhaCAF(code));
         }
         out.appendChild(grid);
 
       }catch(err){
         stats.innerHTML = `<span class="badge danger">Erro</span> <span>${err.message}</span>`;
+      }finally{
+        btn.disabled = false;
       }
     }
 
-    /* ——— RESTRIÇÃO DE DIGITAÇÃO E VALIDAÇÃO ——— */
-    input.addEventListener('input', () => {
-      const max = parseInt(input.getAttribute('maxlength'), 10) || 24;
-      let v = (input.value || '').toUpperCase().replace(/[^A-Z0-9.*]/g, '');
-      if (v.length > max) v = v.slice(0, max);
-      input.value = v;
-      input.setCustomValidity('');
-    });
-
-    // Regex: BAMMAAAA.XX.XXXXXXXXXCAF
-    const CAF_REGEX = /^BA\d{6}\.\d{2}\.[0-9*]{9}CAF$/;
-
+    // ——— VALIDAÇÃO E DISPARO ———
     btn.addEventListener('click', (e) => {
       const value = (input.value || '').toUpperCase().trim();
       if (!CAF_REGEX.test(value)) {
