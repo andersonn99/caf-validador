@@ -40,7 +40,6 @@
       padding:12px 18px; background:var(--green); color:#fff;
       border:none; border-radius:999px; cursor:pointer; font-weight:700
     }
-    button.primary:disabled{ opacity:.6; cursor:not-allowed }
     .hint{ font-size:13px; color:#555; margin-top:8px }
 
     .stats{ display:flex; gap:12px; align-items:center; margin:14px 0 0; font-size:14px; }
@@ -119,7 +118,7 @@
     <h1>VALIDADOR DE CAF</h1>
     <p class="lead">
       Digite o CAF com curingas (<code>*</code>) para gerar combinações no servidor. Exemplo:
-      <code>BA032025.01.00**39367CAF</code> (cada <code>*</code> vira dígitos 0–9).
+      <code>BA032025.01.00**39367CAF</code>
     </p>
 
     <div class="toolbar">
@@ -139,13 +138,14 @@
           id="inputCAF" 
           type="text" 
           placeholder="Ex.: BA032025.01.00**39367CAF"
-          pattern="^BA\d{6}\.\d{2}\.\d{2}(\*\*|\d{2})\d{5}CAF$"
+          maxlength="24"
+          pattern="^BA\d{6}\.\d{2}\.[0-9*]{9}CAF$"
           title="Formato válido: BA032025.01.00**39367CAF"
         />
         <button id="btnGerar" class="primary">GERAR CAF</button>
       </div>
       <div class="hint">
-        • Aceita letras maiúsculas, números, ponto e asterisco. O backend cruza mês/ano com a planilha.
+        • O sistema gera CAF criadas até setembro de 2025.
       </div>
       <div class="stats" id="stats"></div>
     </div>
@@ -256,13 +256,23 @@
       }
     }
 
-    // Validação do formato do CAF
+    /* ——— RESTRIÇÃO DE DIGITAÇÃO E VALIDAÇÃO ——— */
+    input.addEventListener('input', () => {
+      const max = parseInt(input.getAttribute('maxlength'), 10) || 24;
+      let v = (input.value || '').toUpperCase().replace(/[^A-Z0-9.*]/g, '');
+      if (v.length > max) v = v.slice(0, max);
+      input.value = v;
+      input.setCustomValidity('');
+    });
+
+    // Regex: BAMMAAAA.XX.XXXXXXXXXCAF
+    const CAF_REGEX = /^BA\d{6}\.\d{2}\.[0-9*]{9}CAF$/;
+
     btn.addEventListener('click', (e) => {
-      const regex = /^BA\d{6}\.\d{2}\.\d{2}(\*\*|\d{2})\d{5}CAF$/;
-      const value = input.value.trim().toUpperCase();
-      if (!regex.test(value)) {
+      const value = (input.value || '').toUpperCase().trim();
+      if (!CAF_REGEX.test(value)) {
         e.preventDefault();
-        input.setCustomValidity('Por favor, use o formato correto: BA032025.01.00**39367CAF');
+        input.setCustomValidity('Formato inválido. Use ex: BA032025.01.00**39367CAF. Onde, após o BA é o mês e ano de inscrição.');
         input.reportValidity();
         return;
       }
@@ -270,8 +280,12 @@
       gerar();
     });
 
-    input.addEventListener('input', () => {
-      input.setCustomValidity('');
+    // Enter também aciona a validação + geração
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        btn.click();
+      }
     });
   </script>
 </body>
