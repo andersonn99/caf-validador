@@ -7,7 +7,7 @@ from pathlib import Path
 import openpyxl
 
 # Caminho da planilha no projeto Vercel:
-PLANILHA = Path(__file__).parent.parent / "Dados" / "GABARITO.xlsx"
+PLANILHA = Path(__file__).parent.parent / "dados" / "GABARITO.xlsx"
 
 # Ex.: BA032025.01.00**39367CAF  (ou ...00XX..., ou ...00dd...)
 CAF_RE = re.compile(
